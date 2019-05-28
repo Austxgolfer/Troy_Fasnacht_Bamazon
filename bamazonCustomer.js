@@ -8,7 +8,7 @@ var mysql = require("mysql");
 //border: getBorderCaracters("norc")
 //};
 var data;
-
+var purchase = [];
 //connection to mysql database
 var connection = mysql.createConnection({
   host: "localhost",
@@ -31,3 +31,34 @@ function afterConnection() {
     connection.end();
   });
 }
+function selectItem() {
+  inquire
+    .prompt([
+      {
+        message: "Enter the ID number of the item you would like to purchase.",
+        type: "number",
+        name: "ID"
+      }
+    ])
+    .then(function(answer) {
+      purchase.push(answer.ID);
+      qtyReqst();
+    });
+} //end or selectitem function
+
+function qtyReqst() {
+  inquire
+    .prompt([
+      {
+        message: "Enter the quanitity you would like to purchase.",
+        type: "number",
+        name: "Qty"
+      }
+    ])
+    .then(function(answer) {
+      purchase.push(answer.Qty);
+      console.log(purchase);
+    });
+} // end of function to inquire about quantity
+
+selectItem();
