@@ -1,13 +1,8 @@
 //required assets for node
-var table = require("table");
+var cliTable = require("cli-table");
 var inquire = require("inquirer");
 var mysql = require("mysql");
-//import { table, getBorderCharacters } from "table";
-//table template for display of database data
-//var config = {
-//border: getBorderCaracters("norc")
-//};
-var data;
+
 var purchase = [];
 //connection to mysql database
 var connection = mysql.createConnection({
@@ -28,7 +23,6 @@ function afterConnection() {
   connection.query("SELECT * FROM products", function(err, res) {
     if (err) throw err;
     console.log(res);
-    connection.end();
   });
 }
 function selectItem() {
@@ -55,10 +49,49 @@ function qtyReqst() {
         name: "Qty"
       }
     ])
-    .then(function(answer) {
-      purchase.push(answer.Qty);
+    .then(function(resp) {
+      purchase.push(resp.Qty);
       console.log(purchase);
+      checkInv();
     });
 } // end of function to inquire about quantity
+
+function checkInv() {
+  var query = "select * from products where ?";
+  connection.query(query, { item_id: purchase[0] }, function(err, res) {
+    if (err) throw err;
+    if (res[0].onhand_qty >= purchase[1]) {
+      console.log("We have the inventory the order will be placed.");
+      console.log(
+        "The total cost of you order will be $",
+        purchase[1] * res[0].price
+      );
+      updateDB();
+    } else {
+      console.log(
+        "there is not enough inventory for this order. Please select another item."
+      );
+    }
+  }); //end of connection query function
+}
+
+function updateDB() {
+  var newData = "update products set onhand_qty = ? where item_id = ?";
+  var chkData = "select onhand_qty from products where ?";
+  connection.query(chkData, { item_id: purchase[0] }, function(err, res) {
+    if (err) throw err;
+    var newQty = res[0].onhand_qty - purchase[1];
+    connection.query(newData, [newQty, purchase[0]], function(err, res) {
+      if (err) throw err;
+      connection.query(chkData, { item_id: purchase[0] }, function(err, res) {
+        if (err) throw err;
+        if (res[0].onhand_qty === purchase[1]) {
+          console.log("Transaction completed.");
+          connection.end();
+        }
+      });
+    });
+  });
+}
 
 selectItem();
