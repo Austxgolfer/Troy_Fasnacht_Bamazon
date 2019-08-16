@@ -17,25 +17,26 @@ var connection = mysql.createConnection({
   password: "Lokidog_01",
   database: "bamazon"
 });
-
-connection.connect(function(err) {
-  if (err) throw err;
-  connection.query("SELECT * FROM products", function(err, res) {
+function tableUpdate() {
+  connection.connect(function(err) {
     if (err) throw err;
-    for (x = 0; x < res.length; x++) {
-      displayArray[x] = Array.from([
-        res[x].item_id,
-        res[x].prod_name,
-        res[x].dept_name,
-        res[x].price,
-        res[x].onhand_qty
-      ]);
-      table.push(displayArray[x]);
-    }
-    console.log(table.toString());
+    connection.query("SELECT * FROM products", function(err, res) {
+      if (err) throw err;
+      for (x = 0; x < res.length; x++) {
+        displayArray[x] = Array.from([
+          res[x].item_id,
+          res[x].prod_name,
+          res[x].dept_name,
+          res[x].price,
+          res[x].onhand_qty
+        ]);
+        table.push(displayArray[x]);
+      }
+      console.log(table.toString());
+      selectItem();
+    });
   });
-});
-
+}
 function selectItem() {
   console.log("");
   inquire
@@ -51,6 +52,23 @@ function selectItem() {
       qtyReqst();
     });
 } //end or selectitem function
+function againYn() {
+  inquire
+    .prompt([
+      {
+        message: "Would you like to select another item?(Y/N)",
+        type: "string",
+        name: "yesno"
+      }
+    ])
+    .then(function(resp) {
+      if (resp.yesno == "y") {
+        selectItem();
+      } else {
+        console.log("Thanks for your purchase");
+      }
+    });
+}
 
 function qtyReqst() {
   inquire
@@ -63,7 +81,7 @@ function qtyReqst() {
     ])
     .then(function(resp) {
       purchase.push(resp.Qty);
-      console.log(purchase);
+      //console.log(purchase);
       checkInv();
     });
 } // end of function to inquire about quantity
@@ -83,6 +101,7 @@ function checkInv() {
       console.log(
         "there is not enough inventory for this order. Please select another item."
       );
+      againYn();
     }
   }); //end of connection query function
 } //end of check inventory function
@@ -99,10 +118,10 @@ function updateDB() {
         if (err) throw err;
         if (res[0].onhand_qty === newQty) {
           console.log("Transaction completed.");
-          connection.end();
+          againYn();
         }
       });
     });
   });
 }
-selectItem();
+tableUpdate();
